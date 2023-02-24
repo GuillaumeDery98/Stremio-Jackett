@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use Imdb\Title;
 use GuzzleHttp\Client;
+use RealDebrid\Auth\Token;
+use RealDebrid\RealDebrid;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Vedmant\FeedReader\Facades\FeedReader;
 
 /**
@@ -16,8 +19,8 @@ class AddonController extends Controller
 {
     public function test()
     {
-        Log::debug('test');
-        dd($this->stream('movie', 'tt9764362'));
+
+        //dd($this->stream('movie', 'tt9764362'));
     }
     /**
      * Summarized collection of meta items. Catalogs are displayed on the Stremio's Board, Discover and Search.
@@ -104,7 +107,7 @@ class AddonController extends Controller
 
     public function getTorrent($name, $type, $year = null)
     {
-        $rss = FeedReader::read('http://192.168.1.2:9117/api/v2.0/indexers/yggtorrent/results/torznab?apikey=' . env('JACKETT_API_KEY') . '&t=' . $type . '&q=' . $name);
+        $rss = FeedReader::read('http://192.168.1.2:9117/api/v2.0/indexers/yggtorrent/results/torznab?apikey=' . env('JACKETT_API_KEY') . '&t=' . $type . '&q=' . $name . '&limit=1');
         $data = [];
         /* Full datas 
         "title" => $item->data['child'][""]["title"][0]['data'],
@@ -124,11 +127,27 @@ class AddonController extends Controller
             Log::debug("torrent: " . $item->data['child'][""]["link"][0]['data']);
             $data[] = [
                 "name" => 'YggTorrent',
-                "url" => $item->data['child'][""]["link"][0]['data']
+                "url" => $this->realDebrid($item->data['child'][""]["link"][0]['data'])
             ];
         }
 
         return $data;
+    }
+
+    public function realDebrid($torrentLink)
+    {
+        $token = new Token(env('REALDREBRID_API_KEY'));
+        $realDebrid = new RealDebrid($token);
+        Log::debug('test');
+        $filename = 'temp.torrent';
+        $torrent = tempnam(sys_get_temp_dir(), $filename);
+        copy($torrentLink, $torrent);
+        $torrent = (array)$realDebrid->torrents->addTorrent($torrent);
+        $realDebrid->torrents->selectFiles($torrent['id']);
+        $torrentInfo = (array)$realDebrid->torrents->torrent($torrent['id']);
+        $link = (array)$realDebrid->unrestrict->link($torrentInfo['links'][0]);
+
+        return $link['download'];
     }
 
     /**

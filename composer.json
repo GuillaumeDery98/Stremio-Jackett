@@ -14,8 +14,15 @@
         "laravel/framework": "^9.19",
         "laravel/sanctum": "^3.0",
         "laravel/tinker": "^2.7",
-        "vedmant/laravel-feed-reader": "^1.5"
+        "vedmant/laravel-feed-reader": "^1.5",
+        "vgot/real-debrid": "master"
     },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/GuillaumeDery98/real-debrid"
+        }
+    ],
     "require-dev": {
         "fakerphp/faker": "^1.9.1",
         "laravel/pint": "^1.0",
