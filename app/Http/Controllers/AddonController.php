@@ -19,8 +19,7 @@ class AddonController extends Controller
 {
     public function test()
     {
-
-        //dd($this->stream('movie', 'tt9764362'));
+        return $this->realDebrid('http://192.168.1.2:9117/dl/yggtorrent/?jackett_apikey=50a3psycd00jocn6e02w2s7c6khuziho&path=Q2ZESjhNQmVyVm96NjU5THAzS0F4azc0T0Z5MEdsRkxHYlhXa0tha2oyaVg5SkxmUDhlZ0lnbFV4NS1VVGlhQjg3azF1enNRb1c0LVIxQkk0eGxtdGJvUnhxbTlnWjB0aG1hMV9mNWh2VWJZQ0owc01uYVNGbGtNOWRqWUN6VFY2TjF2REhGc3RETTJxNm4yNkhtdENpejR4eUs1OHdibl9tZzBsZEhXa3RBQUdZMjYxOUVBT0RxVjloTFY1NXhvdDFicE5R&file=Black+Panther+Wakanda+Forever+(2022)+Hybrid+MULTi+VFF+2160p+10bit+4KLight+DV+HDR+BluRay+DDP+5.1+Atmos+x265-QTZ');
     }
     /**
      * Summarized collection of meta items. Catalogs are displayed on the Stremio's Board, Discover and Search.
@@ -138,13 +137,32 @@ class AddonController extends Controller
     {
         $token = new Token(env('REALDREBRID_API_KEY'));
         $realDebrid = new RealDebrid($token);
-        Log::debug('test');
+        $torrentList = (array)$realDebrid->torrents->get();
+        $download = true;
+
+
         $filename = 'temp.torrent';
         $torrent = tempnam(sys_get_temp_dir(), $filename);
         copy($torrentLink, $torrent);
         $torrent = (array)$realDebrid->torrents->addTorrent($torrent);
-        $realDebrid->torrents->selectFiles($torrent['id']);
         $torrentInfo = (array)$realDebrid->torrents->torrent($torrent['id']);
+
+
+        foreach ($torrentList as $old) {
+            $old = (array)$old;
+            if ($old['filename'] == $torrentInfo['filename']) {
+                $download = false;
+                $torrentInfo = (array)$realDebrid->torrents->torrent($old['id']);
+                $realDebrid->torrents->delete($torrent['id']);
+            }
+        }
+
+        if ($download) {
+            $realDebrid->torrents->selectFiles($torrentInfo['id']);
+        }
+
+        $torrentInfo = (array)$realDebrid->torrents->torrent($torrentInfo['id']);
+
         $link = (array)$realDebrid->unrestrict->link($torrentInfo['links'][0]);
 
         return $link['download'];
