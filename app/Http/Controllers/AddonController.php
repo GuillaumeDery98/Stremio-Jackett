@@ -19,7 +19,7 @@ class AddonController extends Controller
 {
     public function test()
     {
-
+        dd($this->getTorrent('Babylon', 'movie'));
         dd($this->stream('movie', 'tt11813216'));
         $type = 'movie';
         $name = 'Babylon 2022';
@@ -53,6 +53,8 @@ class AddonController extends Controller
         $infos = $this->getInfos($id);
         $name = ($type == 'serie') ? $infos["l"] . ' S' . $season . 'E' . $episode : $infos["l"] . ' ' . $infos["y"];
         Log::debug($name);
+
+
 
         return response()->json([
             "streams" => $this->getTorrent($name, $type)
@@ -100,7 +102,34 @@ class AddonController extends Controller
             ];
         }
 
+
+
         return $data;
+    }
+
+    public function getTrailer($name)
+    {
+        $trailer = $name . ' bande annonce vf';
+        $trailer = str_replace(' ', '%20', $trailer);
+        $client = new Client();
+        $response = json_decode($client->request("GET", 'https://youtube-search-results.p.rapidapi.com/youtube-search/', [
+            'headers' => [
+                'X-RapidAPI-Key' => env('YOUTUBE_API_KEY'),
+                'X-RapidAPI-Host' => 'youtube-search-results.p.rapidapi.com'
+            ],
+            'query' => [
+                'q' => $trailer
+            ]
+        ])->getBody()->getContents(), true);
+
+
+        $trailer = $response["items"][0]["id"];
+
+        return [[
+            "name" => 'Guillaume Trailer',
+            "description" => 'Bande annonce vf',
+            "ytId" => $trailer
+        ]];
     }
 
     public function realDebrid($torrentLink)
@@ -156,56 +185,6 @@ class AddonController extends Controller
         return redirect()->to($link['download']);
     }
 
-
-    /**
-     * Summarized collection of meta items. Catalogs are displayed on the Stremio's Board, Discover and Search.
-     * @param $type
-     * @param $id
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function catalog($type, $id, $extra = null)
-    {
-        Log::debug('catalog => type: ' . $type . ' => id : ' . $id . ' => extra : ' . $extra);
-        return response()->json([
-            "metas" => [
-                [
-                    "id" => "BigBuckBunny",
-                    "name" => "Big Buck Bunny",
-                    "year" => 2008,
-                    "poster" => "https://image.tmdb.org/t/p/w600_and_h900_bestv2/uVEFQvFMMsg4e6yb03xOfVsDz4o.jpg",
-                    "posterShape" => "regular",
-                    "banner" => "https://image.tmdb.org/t/p/original/aHLST0g8sOE1ixCxRDgM35SKwwp.jpg",
-                    "isFree" => true,
-                    "type" => "movie"
-                ]
-            ]
-        ]);
-    }
-
-    /**
-     * Detailed description of meta item. This description is displayed when the user selects an item form the catalog.
-     * @param $type
-     * @param $id
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function meta($type, $id, $extra = null)
-    {
-        Log::debug('meta => type: ' . $type . '=> id: ' . $id . '=> extra: ' . $extra);
-        return response()->json([
-            "meta" => [
-                "id" => "BigBuckBunny",
-                "name" => "Big Buck Bunny",
-                "year" => 2008,
-                "poster" => "https://image.tmdb.org/t/p/w600_and_h900_bestv2/uVEFQvFMMsg4e6yb03xOfVsDz4o.jpg",
-                "posterShape" => "regular",
-                "logo" => "https://fanart.tv/fanart/movies/10378/hdmovielogo/big-buck-bunny-5054df8a36bfa.png",
-                "background" => "https://image.tmdb.org/t/p/original/aHLST0g8sOE1ixCxRDgM35SKwwp.jpg",
-                "isFree" => true,
-                "type" => "movie"
-            ]
-        ]);
-    }
-
     /**
      * Subtitles resource for the chosen media.
      * @param $type
@@ -229,8 +208,6 @@ class AddonController extends Controller
             "description" => "Addon for get torrent from Jackett and have real-debrid flux",
             "name" => "Guillaume Add-on",
             "resources" => [
-                "catalog",
-                "meta",
                 "stream"
             ],
             "types" => [
