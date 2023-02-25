@@ -55,9 +55,7 @@ class AddonController extends Controller
         Log::debug($name);
 
         return response()->json([
-            "streams" => [
-                $this->getTorrent($name, $type)[0]
-            ]
+            "streams" => $this->getTorrent($name, $type)
         ]);
     }
 
@@ -77,7 +75,7 @@ class AddonController extends Controller
     public function getTorrent($name, $type, $year = null)
     {
         $type = ($type == 'movie' ? 'movie' : 'tvsearch');
-        $rss = FeedReader::read('http://192.168.1.2:9117/api/v2.0/indexers/yggtorrent/results/torznab?apikey=' . env('JACKETT_API_KEY') . '&t=' . $type . '&q=' . $name . '&limit=1');
+        $rss = FeedReader::read('http://192.168.1.2:9117/api/v2.0/indexers/yggtorrent/results/torznab?apikey=' . env('JACKETT_API_KEY') . '&t=' . $type . '&q=' . $name . '&limit=' . env('RESULT_LIMIT'));
         $data = [];
         /* Full datas 
         "title" => $item->data['child'][""]["title"][0]['data'],
