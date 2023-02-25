@@ -224,10 +224,10 @@ class AddonController extends Controller
     public function manifest()
     {
         return response()->json([
-            "id" => "org.stremio.laravel",
+            "id" => "org.stremio.guillaume",
             "version" => "0.0.1",
-            "description" => "Laravel Stremio Add-on",
-            "name" => "Laravel Add-on",
+            "description" => "Addon for get torrent from Jackett and have real-debrid flux",
+            "name" => "Guillaume Add-on",
             "resources" => [
                 "catalog",
                 "meta",
