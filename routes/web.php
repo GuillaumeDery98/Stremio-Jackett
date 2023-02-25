@@ -15,3 +15,4 @@ use App\Http\Controllers\AddonController;
 */
 
 Route::get('/', [AddonController::class, 'test']);
+Route::get('/download/{id}', [AddonController::class, 'download'])->name('download');
