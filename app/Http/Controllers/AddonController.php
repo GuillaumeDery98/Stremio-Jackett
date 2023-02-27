@@ -67,6 +67,7 @@ class AddonController extends Controller
     {
         $name = str_replace(' ', '.', $name);
         $name = str_replace('&', 'and', $name);
+        $name = str_replace(':', '.', $name);
 
         return $name;
     }
