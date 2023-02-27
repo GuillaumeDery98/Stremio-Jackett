@@ -75,8 +75,8 @@ class AddonController extends Controller
     public function getInfos($id)
     {
         $config = new \Imdb\Config();
-        //$config->language = 'fr-FR,fr,en';
-        $config->language = 'en';
+        $config->language = 'fr-FR,fr,en';
+        //$config->language = 'en';
         $title = new \Imdb\Title($id, $config);
 
         return $title;
@@ -125,7 +125,7 @@ class AddonController extends Controller
         if ($type == 'series') {
             $nameSeason = substr($name, 0, -3);
             Log::debug("Comple season: " . $name);
-            $item = FeedReader::read('http://192.168.1.2:9117/api/v2.0/indexers/yggtorrent/results/torznab?apikey=' . env('JACKETT_API_KEY') . '&t=' . $typeJackett . '&q=' . $nameSeason . '&limit=1')->get_items()[0];
+            $item = FeedReader::read('http://192.168.1.2:9117/api/v2.0/indexers/yggtorrent/results/torznab?apikey=' . env('JACKETT_API_KEY') . '&t=' . $typeJackett . '&q=' . $nameSeason . '&limit=2')->get_items()[0];
             //$this->realDebrid($item->data['child'][""]["link"][0]['data'], $nameSeason, $type);
             $data[] = [
                 "name" => 'Complete Season',
@@ -235,7 +235,7 @@ class AddonController extends Controller
         ])->getBody()->getContents(), true);
 
 
-        $trailer = $response["items"][0]["id"];
+        $trailer = $response["items"][0]["id"] ?? null;
 
         return [[
             "name" => 'Guillaume Trailer',
