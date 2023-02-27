@@ -19,8 +19,9 @@ class AddonController extends Controller
 {
     public function test()
     {
+        dd($this->getInfos('tt0910936'));
+        dd($this->stream('movie', 'tt0758752'));
         dd($this->getTorrent('Babylon', 'movie'));
-        dd($this->stream('movie', 'tt11813216'));
         $type = 'movie';
         $name = 'Babylon 2022';
         $rss = FeedReader::read('http://192.168.1.2:9117/api/v2.0/indexers/yggtorrent/results/torznab?apikey=' . env('JACKETT_API_KEY') . '&t=' . $type . '&q=' . $name . '&limit=5');
@@ -51,7 +52,8 @@ class AddonController extends Controller
             }
         }
         $infos = $this->getInfos($id);
-        $name = ($type == 'serie') ? $infos["l"] . ' S' . $season . 'E' . $episode : $infos["l"] . ' ' . $infos["y"];
+        $name = ($type == 'serie') ? $infos->title() . ' S' . $season . 'E' . $episode : $infos->title() . ' ' . $infos->year();
+        $name = $this->normalizeName($name);
         Log::debug($name);
 
 
@@ -61,8 +63,23 @@ class AddonController extends Controller
         ]);
     }
 
+    public function normalizeName($name)
+    {
+        //$name = str_replace(' ', '.', $name);
+        $name = str_replace('&', 'and', $name);
+
+        return $name;
+    }
+
     public function getInfos($id)
     {
+        $config = new \Imdb\Config();
+        $config->language = 'fr-FR,fr,en';
+        $title = new \Imdb\Title($id, $config);
+
+        return $title;
+
+        /* Custom request via api
         $client = new Client();
         $response = end(json_decode($client->request("GET", 'https://imdb-movies-web-series-etc-search.p.rapidapi.com/' . $id . '.json', [
             'headers' => [
@@ -71,7 +88,7 @@ class AddonController extends Controller
             ]
         ])->getBody()->getContents(), true)["d"]);
 
-        return $response;
+        return $response; */
     }
 
     public function getTorrent($name, $type, $year = null)
@@ -183,6 +200,11 @@ class AddonController extends Controller
         $link = (array)$realDebrid->unrestrict->link($torrentInfo['links'][0]);
 
         return redirect()->to($link['download']);
+    }
+
+    public function catalog($type, $id, $extra = null)
+    {
+        return null;
     }
 
     /**
