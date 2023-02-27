@@ -111,6 +111,7 @@ class AddonController extends Controller
                 "category" => $item->data['child'][""]["category"][0]['data'],
                 "enclosure" => $item->data['child'][""]["enclosure"][0]['data'],
         */
+        $data[] = $this->getTrailer($name)[0];
         foreach ($rss->get_items() as $item) {
             Log::debug("torrent: " . $item->data['child'][""]["link"][0]['data']);
             $data[] = [
