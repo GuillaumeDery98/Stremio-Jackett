@@ -19,7 +19,7 @@ class AddonController extends Controller
 {
     public function test()
     {
-        dd($this->getInfos('tt0910936'));
+        dd($this->getInfos('tt0910936')->title());
         dd($this->stream('movie', 'tt0758752'));
         dd($this->getTorrent('Babylon', 'movie'));
         $type = 'movie';
@@ -39,6 +39,7 @@ class AddonController extends Controller
      */
     public function stream($type, $id, $extra = null)
     {
+        return null;
         Log::debug('stream => type: ' . $type . '=> id: ' . $id . '=> extra: ' . $extra);
         if ($type == 'serie') {
             $serie = explode(':', $id);
@@ -145,7 +146,8 @@ class AddonController extends Controller
         return [[
             "name" => 'Guillaume Trailer',
             "description" => 'Bande annonce vf',
-            "ytId" => $trailer
+            "ytId" => $trailer,
+            "source" => $trailer
         ]];
     }
 
@@ -192,10 +194,11 @@ class AddonController extends Controller
         $torrentInfo = (array)$realDebrid->torrents->torrent($id);
 
 
+        /*
         while ($torrentInfo['status'] != 'downloaded') {
             $torrentInfo = (array)$realDebrid->torrents->torrent($id);
             sleep(0.25);
-        }
+        }*/
 
         $link = (array)$realDebrid->unrestrict->link($torrentInfo['links'][0]);
 
@@ -205,6 +208,35 @@ class AddonController extends Controller
     public function catalog($type, $id, $extra = null)
     {
         return null;
+    }
+
+    /**
+     * Detailed description of meta item. This description is displayed when the user selects an item form the catalog.
+     * @param $type
+     * @param $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function meta($type, $id, $extra = null)
+    {
+        $meta = $this->getInfos($id);
+        return response()->json([
+            "meta" => [
+                "id" => $id,
+                "name" => $meta->title(),
+                "description" => $meta->storyline(),
+                "genres" => $meta->genres(),
+                "year" => $meta->year(),
+                "poster" => $meta->photo(false),
+                "posterShape" => "poster",
+                "logo" => $meta->photo(),
+                "runtime" => $meta->runtimes()[0]['time'] . ' min',
+                "background" => $meta->photo(false),
+                "isFree" => true,
+                "type" => $type,
+                "trailers" => $this->getTrailer($meta->title()),
+                "imdbRating" => $meta->rating(),
+            ]
+        ]);
     }
 
     /**
@@ -230,6 +262,8 @@ class AddonController extends Controller
             "description" => "Addon for get torrent from Jackett and have real-debrid flux",
             "name" => "Guillaume Add-on",
             "resources" => [
+                "catalog",
+                "meta",
                 "stream"
             ],
             "types" => [
