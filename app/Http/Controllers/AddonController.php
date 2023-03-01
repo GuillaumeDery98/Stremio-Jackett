@@ -19,16 +19,12 @@ class AddonController extends Controller
 {
     public function test()
     {
-        return true;
-        dd(substr('YOU.S01.E03', 0, -4));
-        dd($this->download('BEOWGQS6S72E4'));
-        dd($this->stream('series', 'tt11915056:1:3'));
         $type = 'movie';
         $name = 'Babylon 2022';
-        $rss = FeedReader::read('http://192.168.1.2:9117/api/v2.0/indexers/yggtorrent/results/torznab?apikey=' . env('JACKETT_API_KEY') . '&t=' . $type . '&q=' . $name . '&limit=5');
+        $rss = FeedReader::read('http://' . env("JACKETT_URL") . '/api/v2.0/indexers/yggtorrent/results/torznab?apikey=' . env('JACKETT_API_KEY') . '&t=' . $type . '&q=' . $name . '&limit=5');
         dd($rss->get_items());
         $this->stream('series', 'tt3581920:1:2');
-        return $this->realDebrid('http://192.168.1.2:9117/dl/yggtorrent/?jackett_apikey=50a3psycd00jocn6e02w2s7c6khuziho&path=Q2ZESjhNQmVyVm96NjU5THAzS0F4azc0T0Z5MEdsRkxHYlhXa0tha2oyaVg5SkxmUDhlZ0lnbFV4NS1VVGlhQjg3azF1enNRb1c0LVIxQkk0eGxtdGJvUnhxbTlnWjB0aG1hMV9mNWh2VWJZQ0owc01uYVNGbGtNOWRqWUN6VFY2TjF2REhGc3RETTJxNm4yNkhtdENpejR4eUs1OHdibl9tZzBsZEhXa3RBQUdZMjYxOUVBT0RxVjloTFY1NXhvdDFicE5R&file=Black+Panther+Wakanda+Forever+(2022)+Hybrid+MULTi+VFF+2160p+10bit+4KLight+DV+HDR+BluRay+DDP+5.1+Atmos+x265-QTZ');
+        return $this->realDebrid('http://' . env("JACKETT_URL") . '/dl/yggtorrent/?jackett_apikey=50a3psycd00jocn6e02w2s7c6khuziho&path=Q2ZESjhNQmVyVm96NjU5THAzS0F4azc0T0Z5MEdsRkxHYlhXa0tha2oyaVg5SkxmUDhlZ0lnbFV4NS1VVGlhQjg3azF1enNRb1c0LVIxQkk0eGxtdGJvUnhxbTlnWjB0aG1hMV9mNWh2VWJZQ0owc01uYVNGbGtNOWRqWUN6VFY2TjF2REhGc3RETTJxNm4yNkhtdENpejR4eUs1OHdibl9tZzBsZEhXa3RBQUdZMjYxOUVBT0RxVjloTFY1NXhvdDFicE5R&file=Black+Panther+Wakanda+Forever+(2022)+Hybrid+MULTi+VFF+2160p+10bit+4KLight+DV+HDR+BluRay+DDP+5.1+Atmos+x265-QTZ');
     }
 
 
@@ -98,7 +94,7 @@ class AddonController extends Controller
     public function getTorrent($name, $type, $year = null)
     {
         $typeJackett = ($type == 'movie' ? 'movie' : 'tvsearch');
-        $rss = FeedReader::read('http://192.168.1.2:9117/api/v2.0/indexers/yggtorrent/results/torznab?apikey=' . env('JACKETT_API_KEY') . '&t=' . $typeJackett . '&q=' . $name . '&limit=' . env('RESULT_LIMIT'));
+        $rss = FeedReader::read('http://' . env("JACKETT_URL") . '/api/v2.0/indexers/yggtorrent/results/torznab?apikey=' . env('JACKETT_API_KEY') . '&t=' . $typeJackett . '&q=' . $name . '&limit=' . env('RESULT_LIMIT'));
         $data = [];
         /* Full datas 
         "title" => $item->data['child'][""]["title"][0]['data'],
@@ -127,7 +123,7 @@ class AddonController extends Controller
         if ($type == 'series') {
             $nameSeason = substr($name, 0, -3);
             Log::debug("Comple season: " . $name);
-            $item = FeedReader::read('http://192.168.1.2:9117/api/v2.0/indexers/yggtorrent/results/torznab?apikey=' . env('JACKETT_API_KEY') . '&t=' . $typeJackett . '&q=' . $nameSeason . '&limit=2')->get_items()[0];
+            $item = FeedReader::read('http://' . env("JACKETT_URL") . '/api/v2.0/indexers/yggtorrent/results/torznab?apikey=' . env('JACKETT_API_KEY') . '&t=' . $typeJackett . '&q=' . $nameSeason . '&limit=2')->get_items()[0];
             //$this->realDebrid($item->data['child'][""]["link"][0]['data'], $nameSeason, $type);
             $data[] = [
                 "name" => 'Complete Season',
