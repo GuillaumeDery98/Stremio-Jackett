@@ -19,6 +19,7 @@ class AddonController extends Controller
 {
     public function test()
     {
+        return true;
         dd(substr('YOU.S01.E03', 0, -4));
         dd($this->download('BEOWGQS6S72E4'));
         dd($this->stream('series', 'tt11915056:1:3'));
@@ -154,13 +155,14 @@ class AddonController extends Controller
         $torrentInfo = (array)$realDebrid->torrents->torrent($torrent['id']);
 
 
+        /*
         foreach ($torrentList as $old) {
             $old = (array)$old;
             if ($old['filename'] == $torrentInfo['filename']) {
                 $torrentInfo = (array)$realDebrid->torrents->torrent($old['id']);
                 $realDebrid->torrents->delete($torrent['id']);
             }
-        }
+        }*/
 
         return route('download', ['id' => $torrentInfo['id'], 'name' => $name, 'type' => $type]);
         /*
