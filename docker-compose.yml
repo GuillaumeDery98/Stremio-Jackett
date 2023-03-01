@@ -27,6 +27,7 @@ services:
             - redis
     localtunnel:
         image: efrecon/localtunnel
+        restart: always
         links:
             - laravel.test
         command:
