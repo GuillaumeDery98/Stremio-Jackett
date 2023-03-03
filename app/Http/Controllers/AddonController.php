@@ -16,7 +16,7 @@ class AddonController extends Controller
 {
     public function test()
     {
-        return view('welcome')->with('movie', $this->stream('movie', 'tt14208870'));
+        return view('welcome')->with('movie', $this->stream('movie', 'tt4209788'));
         return $this->stream('movie', 'tt14208870');
         $type = 'movie';
         $name = 'Babylon 2022';
@@ -111,6 +111,7 @@ class AddonController extends Controller
         */
         //$data[] = $this->getTrailer($name)[0];
         $data[] = $this->chooseTorrent($rss->get_items(), $name, $type, $year);
+        //dd($data);
 
         if ($type == 'series') {
             $nameSeason = substr($name, 0, -3);
@@ -241,6 +242,8 @@ class AddonController extends Controller
 
     public function getTrailer($name)
     {
+        return null;
+        /*
         $trailer = $name . ' bande annonce vf';
         $trailer = str_replace(' ', '%20', $trailer);
         $client = new Client();
@@ -262,7 +265,7 @@ class AddonController extends Controller
             "description" => 'Bande annonce vf',
             "ytId" => $trailer,
             "source" => $trailer
-        ]];
+        ]];*/
     }
 
     /**
