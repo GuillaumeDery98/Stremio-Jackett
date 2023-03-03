@@ -2,13 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use Imdb\Title;
 use GuzzleHttp\Client;
 use RealDebrid\Auth\Token;
 use RealDebrid\RealDebrid;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Vedmant\FeedReader\Facades\FeedReader;
 
 /**
@@ -19,6 +16,8 @@ class AddonController extends Controller
 {
     public function test()
     {
+        return view('welcome')->with('movie', $this->stream('movie', 'tt14208870'));
+        return $this->stream('movie', 'tt14208870');
         $type = 'movie';
         $name = 'Babylon 2022';
         $rss = FeedReader::read('http://' . env("JACKETT_URL") . '/api/v2.0/indexers/yggtorrent/results/torznab?apikey=' . env('JACKETT_API_KEY') . '&t=' . $type . '&q=' . $name . '&limit=5');
@@ -49,14 +48,14 @@ class AddonController extends Controller
             }
         }
         $infos = $this->getInfos($id);
-        $name = ($type == 'series') ? $infos->title() . ' S' . $season . 'E' . $episode : $infos->title() . ' ' . $infos->year();
+        $name = ($type == 'series') ? $infos->title() . ' S' . $season . 'E' . $episode : $infos->title();
         $name = $this->normalizeName($name);
         Log::debug($name);
 
 
 
         return response()->json([
-            "streams" => $this->getTorrent($name, $type)
+            "streams" => $this->getTorrent($name, $type, $infos->year())
         ]);
     }
 
@@ -91,7 +90,7 @@ class AddonController extends Controller
         return $response; */
     }
 
-    public function getTorrent($name, $type, $year = null)
+    public function getTorrent($name, $type, $year)
     {
         $typeJackett = ($type == 'movie' ? 'movie' : 'tvsearch');
         $rss = FeedReader::read('http://' . env("JACKETT_URL") . '/api/v2.0/indexers/yggtorrent/results/torznab?apikey=' . env('JACKETT_API_KEY') . '&t=' . $typeJackett . '&q=' . $name . '&limit=' . env('RESULT_LIMIT'));
@@ -110,15 +109,8 @@ class AddonController extends Controller
                 "category" => $item->data['child'][""]["category"][0]['data'],
                 "enclosure" => $item->data['child'][""]["enclosure"][0]['data'],
         */
-        $data[] = $this->getTrailer($name)[0];
-        foreach ($rss->get_items() as $item) {
-            Log::debug("torrent: " . $item->data['child'][""]["link"][0]['data']);
-            $data[] = [
-                "name" => 'Guillaume Addon',
-                "description" => $item->data['child'][""]["title"][0]['data'],
-                "url" => $this->realDebrid($item->data['child'][""]["link"][0]['data'], $name, $type)
-            ];
-        }
+        //$data[] = $this->getTrailer($name)[0];
+        $data[] = $this->chooseTorrent($rss->get_items(), $name, $type, $year);
 
         if ($type == 'series') {
             $nameSeason = substr($name, 0, -3);
@@ -137,6 +129,35 @@ class AddonController extends Controller
         return $data;
     }
 
+    public function chooseTorrent($torrents, $name, $type, $year)
+    {
+        $choosed = [
+            "score" => 0
+        ];
+        foreach (array_reverse($torrents) as $torrent) {
+            $torrent = $torrent->data['child'][""];
+            $title = $torrent["title"][0]['data'];
+            $score = 0;
+            if (str_contains($title, $year) && $type == 'movie') {
+                $score++;
+            }
+            if (str_contains($title, '2160p') || str_contains($title, '4K')) {
+                $score++;
+            }
+            if ($score >= $choosed['score']) {
+                $choosed = [
+                    "score" => $score,
+                    "torrent" => $torrent
+                ];
+            }
+        }
+        return [
+            "name" => 'Guillaume Addon',
+            "description" => $choosed['torrent']["title"][0]['data'],
+            "url" => $this->realDebrid($choosed['torrent']["link"][0]['data'], $name, $type)
+        ];
+    }
+
     public function realDebrid($torrentLink, $name = null, $type = 'movie')
     {
         $token = new Token(env('REALDREBRID_API_KEY'));
@@ -151,6 +172,7 @@ class AddonController extends Controller
         $torrentInfo = (array)$realDebrid->torrents->torrent($torrent['id']);
 
 
+        return route('download', ['id' => $torrentInfo['id'], 'name' => $name, 'type' => $type]);
         /*
         foreach ($torrentList as $old) {
             $old = (array)$old;
@@ -160,7 +182,6 @@ class AddonController extends Controller
             }
         }*/
 
-        return route('download', ['id' => $torrentInfo['id'], 'name' => $name, 'type' => $type]);
         /*
         if ($torrentInfo['status'] != 'downloaded') {
             Log::debug("To Download: " . $torrentInfo['id']);
