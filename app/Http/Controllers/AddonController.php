@@ -16,13 +16,13 @@ class AddonController extends Controller
 {
     public function test()
     {
+        dd($this->stream('series', 'tt3581920:1:2'));
         return view('welcome')->with('movie', $this->stream('movie', 'tt4209788'));
         return $this->stream('movie', 'tt14208870');
         $type = 'movie';
         $name = 'Babylon 2022';
         $rss = FeedReader::read('http://' . env("JACKETT_URL") . '/api/v2.0/indexers/yggtorrent/results/torznab?apikey=' . env('JACKETT_API_KEY') . '&t=' . $type . '&q=' . $name . '&limit=5');
         dd($rss->get_items());
-        $this->stream('series', 'tt3581920:1:2');
         return $this->realDebrid('http://' . env("JACKETT_URL") . '/dl/yggtorrent/?jackett_apikey=50a3psycd00jocn6e02w2s7c6khuziho&path=Q2ZESjhNQmVyVm96NjU5THAzS0F4azc0T0Z5MEdsRkxHYlhXa0tha2oyaVg5SkxmUDhlZ0lnbFV4NS1VVGlhQjg3azF1enNRb1c0LVIxQkk0eGxtdGJvUnhxbTlnWjB0aG1hMV9mNWh2VWJZQ0owc01uYVNGbGtNOWRqWUN6VFY2TjF2REhGc3RETTJxNm4yNkhtdENpejR4eUs1OHdibl9tZzBsZEhXa3RBQUdZMjYxOUVBT0RxVjloTFY1NXhvdDFicE5R&file=Black+Panther+Wakanda+Forever+(2022)+Hybrid+MULTi+VFF+2160p+10bit+4KLight+DV+HDR+BluRay+DDP+5.1+Atmos+x265-QTZ');
     }
 
@@ -48,7 +48,9 @@ class AddonController extends Controller
             }
         }
         $infos = $this->getInfos($id);
-        $name = ($type == 'series') ? $infos->title() . ' S' . $season . 'E' . $episode : $infos->title();
+        //$title = ($infos->orig_title()) ? $infos->orig_title() : $infos->title();
+        $title = $infos->title();
+        $name = ($type == 'series') ? $title . ' S' . $season . 'E' . $episode : $title;
         $name = $this->normalizeName($name);
         Log::debug($name);
 
@@ -65,6 +67,7 @@ class AddonController extends Controller
         $name = str_replace('&', 'and', $name);
         $name = str_replace(':', '.', $name);
         $name = str_replace('_', '.', $name);
+        $name = str_replace("d's", 'ds', $name);
 
         return $name;
     }
@@ -72,9 +75,9 @@ class AddonController extends Controller
     public function getInfos($id)
     {
         $config = new \Imdb\Config();
-        $config->language = 'fr-FR,fr,en';
-        //$config->language = 'en';
-        $title = new \Imdb\Title($id, $config);
+        //$config->language = 'fr-FR,fr,en';
+        $config->language = 'en';
+        $title = new \Imdb\Title($id);
 
         return $title;
 
@@ -93,44 +96,40 @@ class AddonController extends Controller
     public function getTorrent($name, $type, $year)
     {
         $typeJackett = ($type == 'movie' ? 'movie' : 'tvsearch');
-        $rss = FeedReader::read('http://' . env("JACKETT_URL") . '/api/v2.0/indexers/yggtorrent/results/torznab?apikey=' . env('JACKETT_API_KEY') . '&t=' . $typeJackett . '&q=' . $name . '&limit=' . env('RESULT_LIMIT'));
         $data = [];
         /* Full datas 
         "title" => $item->data['child'][""]["title"][0]['data'],
-                "guid" => $item->data['child'][""]["guid"][0]['data'],
-                "jackettindexer" => $item->data['child'][""]["jackettindexer"][0]['data'],
-                "type" => $item->data['child'][""]["type"][0]['data'],
-                "comments" => $item->data['child'][""]["comments"][0]['data'],
-                "pubDate" => $item->data['child'][""]["pubDate"][0]['data'],
-                "size" => $item->data['child'][""]["size"][0]['data'],
-                "grabs" => $item->data['child'][""]["grabs"][0]['data'],
-                "description" => $item->data['child'][""]["description"][0]['data'],
-                "link" => $item->data['child'][""]["link"][0]['data'],
-                "category" => $item->data['child'][""]["category"][0]['data'],
-                "enclosure" => $item->data['child'][""]["enclosure"][0]['data'],
+        "guid" => $item->data['child'][""]["guid"][0]['data'],
+        "jackettindexer" => $item->data['child'][""]["jackettindexer"][0]['data'],
+        "type" => $item->data['child'][""]["type"][0]['data'],
+        "comments" => $item->data['child'][""]["comments"][0]['data'],
+        "pubDate" => $item->data['child'][""]["pubDate"][0]['data'],
+        "size" => $item->data['child'][""]["size"][0]['data'],
+        "grabs" => $item->data['child'][""]["grabs"][0]['data'],
+        "description" => $item->data['child'][""]["description"][0]['data'],
+        "link" => $item->data['child'][""]["link"][0]['data'],
+        "category" => $item->data['child'][""]["category"][0]['data'],
+        "enclosure" => $item->data['child'][""]["enclosure"][0]['data'],
         */
-        //$data[] = $this->getTrailer($name)[0];
-        $data[] = $this->chooseTorrent($rss->get_items(), $name, $type, $year);
-        //dd($data);
 
         if ($type == 'series') {
             $nameSeason = substr($name, 0, -3);
             Log::debug("Comple season: " . $name);
-            $item = FeedReader::read('http://' . env("JACKETT_URL") . '/api/v2.0/indexers/yggtorrent/results/torznab?apikey=' . env('JACKETT_API_KEY') . '&t=' . $typeJackett . '&q=' . $nameSeason . '&limit=2')->get_items()[0];
-            //$this->realDebrid($item->data['child'][""]["link"][0]['data'], $nameSeason, $type);
-            $data[] = [
-                "name" => 'Complete Season',
-                "description" => $item->data['child'][""]["title"][0]['data'],
-                "url" => $this->realDebrid($item->data['child'][""]["link"][0]['data'], $name, $type)
-            ];
+            $rss = FeedReader::read('http://' . env("JACKETT_URL") . '/api/v2.0/indexers/yggtorrent/results/torznab?apikey=' . env('JACKETT_API_KEY') . '&t=' . $typeJackett . '&q=' . $nameSeason . '&limit=' . env('RESULT_LIMIT'));
+            $data[] = $this->chooseTorrent($rss->get_items(), $nameSeason, $type, $year, true);
+            $data = ($data[0]) ? $data : [];
         }
 
+        if (count($data) < 1) {
+            $rss = FeedReader::read('http://' . env("JACKETT_URL") . '/api/v2.0/indexers/yggtorrent/results/torznab?apikey=' . env('JACKETT_API_KEY') . '&t=' . $typeJackett . '&q=' . $name . '&limit=' . env('RESULT_LIMIT'));
+            $data[] = $this->chooseTorrent($rss->get_items(), $name, $type, $year);
+        }
 
 
         return $data;
     }
 
-    public function chooseTorrent($torrents, $name, $type, $year)
+    public function chooseTorrent($torrents, $name, $type, $year, $completeSeason = false)
     {
         $choosed = [
             "score" => 0
@@ -145,6 +144,9 @@ class AddonController extends Controller
             if (str_contains($title, '2160p') || str_contains($title, '4K')) {
                 $score++;
             }
+            if ($completeSeason && str_contains($title, $name . 'E')) {
+                $score = -1;
+            }
             if ($score >= $choosed['score']) {
                 $choosed = [
                     "score" => $score,
@@ -152,11 +154,11 @@ class AddonController extends Controller
                 ];
             }
         }
-        return [
+        return (isset($choosed['torrent'])) ? [
             "name" => 'Guillaume Addon',
             "description" => $choosed['torrent']["title"][0]['data'],
             "url" => $this->realDebrid($choosed['torrent']["link"][0]['data'], $name, $type)
-        ];
+        ] : null;
     }
 
     public function realDebrid($torrentLink, $name = null, $type = 'movie')
